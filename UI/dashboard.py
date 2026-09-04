@@ -14,50 +14,96 @@ window.title("Cocoa Farmer Assistant")
 window.geometry("400x700")
 
 def oncalculate():
-    harvest_weight = float(harvest_weight_entry.get())
-    rejected_weight = float(rejected_weight_entry.get())
-    saleable_weight = calculate_saleable_weight(harvest_weight, rejected_weight)
-    price = float(price_entry.get())
-    labour = float(labour_entry.get())
-    transport = float(transport_entry.get())
-    other_costs = float(other_costs_entry.get())
-    farm_size = float(farm_size_entry.get())
+    try:
+        harvest_weight = float(harvest_weight_entry.get())
+        rejected_weight = float(rejected_weight_entry.get())
+        price = float(price_entry.get())
+        labour = float(labour_entry.get())
+        transport = float(transport_entry.get())
+        other_costs = float(other_costs_entry.get())
+        farm_size = float(farm_size_entry.get())
 
-    yield_per_acre = calculate_yield_per_acre(saleable_weight, farm_size)
-    revenue = calculate_revenue(saleable_weight, price)
-    total_cost = calculate_total_cost(labour, transport, other_costs)
-    profit = calculate_profit(revenue, total_cost)
-    profit_margin = calculate_profit_margin(profit, revenue)
 
-    yield_per_acre_entry.delete(0, tk.END)
-    yield_per_acre_entry.insert(0, f"{yield_per_acre:.2f}")
+        if harvest_weight <= 0:
+            warning_label.config(
+                text="Harvest weight must be greater than 0.",
+                fg="red"
+            )
+            return
+        if rejected_weight < 0:
+            warning_label.config(
+                text="Rejected weight must be a non-negative value.",
+                fg="red"
+            )
+            return
+        if price <= 0:
+            warning_label.config(
+                text="Price must be greater than 0.",
+                fg="red"
+            )
+            return
+        if labour < 0:
+            warning_label.config(
+                text="Labour cost must be a non-negative value.",
+                fg="red"
+            )
+            return
+        if transport < 0:
+            warning_label.config(
+                text="Transport cost must be a non-negative value.",
+                fg="red"
+            )
+            return
+        if other_costs < 0:
+            warning_label.config(
+                text="Other costs must be a non-negative value.",
+                fg="red"
+            )
+            return
+        if farm_size <= 0:
+            warning_label.config(
+                text="Farm size must be greater than 0.",
+                fg="red"
+            )
+            return
 
-    profit_margin_entry.delete(0, tk.END)
-    profit_margin_entry.insert(0, f"{profit_margin:.2f}")
+#----- perform calculations after validating inputs
 
-    result_label.config(text=f"Saleable Weight: {saleable_weight:.2f} kg\nRevenue: ${revenue:.2f}\nTotal Cost: ${total_cost:.2f}\nProfit: ${profit:.2f}", fg="blue")
+        saleable_weight = calculate_saleable_weight(harvest_weight, rejected_weight)
+        yield_per_acre = calculate_yield_per_acre(saleable_weight, farm_size)
+        revenue = calculate_revenue(saleable_weight, price)
+        total_cost = calculate_total_cost(labour, transport, other_costs)
+        profit = calculate_profit(revenue, total_cost)
+        profit_margin = calculate_profit_margin(profit, revenue)
 
-    if moisture_entry.get():
-        moisture = float(moisture_entry.get())
-        if moisture > 8:
-            warning_label.config(text="Warning: Moisture level is above 8%!", fg="red")
+        #----- display the results in the entry fields and result label
+        yield_per_acre_entry.delete(0, tk.END)
+        yield_per_acre_entry.insert(0, f"{yield_per_acre:.2f}")
+
+        profit_margin_entry.delete(0, tk.END)
+        profit_margin_entry.insert(0, f"{profit_margin:.2f}")
+
+        result_label.config(text=f"Saleable Weight: {saleable_weight:.2f} kg\nRevenue: ${revenue:.2f}\nTotal Cost: ${total_cost:.2f}\nProfit: ${profit:.2f}", fg="blue")
+
+        if moisture_entry.get():
+            moisture = float(moisture_entry.get())
+            if moisture > 8:
+                warning_label.config(text="Warning: Moisture level is above 8%!", fg="red")
+            else:
+                warning_label.config(text="Moisture level is acceptable.", fg="green")
+
+        if profit_margin < 0:
+            warning_label.config(text="Warning: Profit margin is negative!", fg="red")
         else:
-            warning_label.config(text="Moisture level is acceptable.", fg="green")
+            warning_label.config(text="Profit margin is positive.", fg="green")
 
-    if profit_margin < 0:
-        warning_label.config(text="Warning: Profit margin is negative!", fg="red")
-    else:
-        warning_label.config(text="Profit margin is positive.", fg="green")
+        if harvest_weight > 0 and rejected_weight > (harvest_weight * 0.15):
+            warning_label.config(text="Warning: Rejected weight is more than 15% of harvest weight!", fg="red")
+        else:
+            warning_label.config(text="Rejected weight is within acceptable limits.", fg="green")
 
-    if harvest_weight <= 0 or price <= 0 or labour < 0 or transport < 0 or other_costs < 0 or farm_size <= 0:
-        warning_label.config(text="Error: Please enter valid positive values for all fields.", fg="red")
-    else:
-        warning_label.config(text="All inputs are valid.", fg="green")
-
-    if harvest_weight > 0 and rejected_weight > (harvest_weight * 0.15):
-        warning_label.config(text="Warning: Rejected weight is more than 15% of harvest weight!", fg="red")
-    else:
-        warning_label.config(text="Rejected weight is within acceptable limits.", fg="green")
+    except ValueError:
+        warning_label.config(text="Error: Please enter valid numeric values.", fg="red")    
 
 
 #----- add a title label to the window
@@ -131,7 +177,7 @@ result_label.pack(pady=10)
 
 
 warning_label = tk.Label(window, text="", font=("Arial", 10, "bold"))  # Add some space before the button
-warning_label.pack(pady=10)
+warning_label.pack(pady=15)
 
 #----- add a calculate button to the window
 calculate_button = tk.Button(window, text="Calculate", command=oncalculate)

@@ -7,6 +7,15 @@ from calculations import (
     calculate_total_cost
 )
 
+from database import create_table, get_connection, save_farm_record
+from datetime import datetime
+from database import get_farm_records
+records = get_farm_records()
+for record in records:
+    print(record)
+
+create_table()  # Ensure the database and table are created before saving records
+
 #----- import the farmers data on the screen
 print("Cocoa Farmer Assistant")
 harvest_weight = float(input("How many kg of cocoa beans were harvested? "))
@@ -23,6 +32,16 @@ revenue = calculate_revenue(saleable_weight, price)
 total_cost = calculate_total_cost(labour, transport, other_costs)
 profit = calculate_profit(revenue, total_cost)
 profit_margin = calculate_profit_margin(profit, revenue)
+
+# Save the farm record to the database
+save_farm_record(harvest_weight, rejected_weight, price, labour, transport, other_costs, farm_size)
+
+
+# Display the farm records
+farm_records = get_farm_records()
+for record in farm_records:
+    print(record)
+
 print(f"Yield per Acre: {yield_per_acre:.2f} kg/acre")
 print(f"Profit Margin: {profit_margin:.2f}%")
 print(f"Total Revenue: ${revenue:.2f}")
