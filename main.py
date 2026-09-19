@@ -12,14 +12,11 @@ from datetime import datetime
 from database import get_farm_records
 import tkinter as tk
 
-records = get_farm_records()
-for record in records:
-    print(record)
+
+create_table()  # Ensure the database and table are created before saving records
 
 window = tk.Tk()
 window.withdraw()
-
-create_table()  # Ensure the database and table are created before saving records
 
 #----- import the farmers data on the screen
 print("Cocoa Farmer Assistant")
@@ -41,6 +38,9 @@ profit_margin = calculate_profit_margin(profit, revenue)
 # Save the farm record to the database
 save_farm_record(harvest_weight, rejected_weight, price, labour, transport, other_costs, farm_size)
 
+records = get_farm_records()
+for record in records:
+    (record)
 
 # Display the farm records
 def show_farm_records():
