@@ -10,9 +10,14 @@ from calculations import (
 from database import create_table, get_connection, save_farm_record
 from datetime import datetime
 from database import get_farm_records
+import tkinter as tk
+
 records = get_farm_records()
 for record in records:
     print(record)
+
+window = tk.Tk()
+window.withdraw()
 
 create_table()  # Ensure the database and table are created before saving records
 
@@ -38,9 +43,14 @@ save_farm_record(harvest_weight, rejected_weight, price, labour, transport, othe
 
 
 # Display the farm records
-farm_records = get_farm_records()
-for record in farm_records:
-    print(record)
+def show_farm_records():
+    records_window = tk.Toplevel(window)
+    records_window.title("Farm Records")
+
+    for record in records:
+        record_text = str(record)
+        record_label = tk.Label(records_window, text=record_text)
+        record_label.pack(pady=2)
 
 print(f"Yield per Acre: {yield_per_acre:.2f} kg/acre")
 print(f"Profit Margin: {profit_margin:.2f}%")

@@ -1,4 +1,3 @@
-from multiprocessing.dummy import connection
 import sqlite3
 
 DATABASE_NAME = "cocoa.db"

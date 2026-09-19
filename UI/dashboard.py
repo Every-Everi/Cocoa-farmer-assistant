@@ -8,6 +8,7 @@ from calculations import (
     calculate_yield_per_acre,
     calculate_saleable_weight,
 )
+from main import show_farm_records
 
 window = tk.Tk()
 window.title("Cocoa Farmer Assistant")
@@ -178,6 +179,9 @@ result_label.pack(pady=10)
 
 warning_label = tk.Label(window, text="", font=("Arial", 10, "bold"))  # Add some space before the button
 warning_label.pack(pady=15)
+
+records_button = tk.Button(window, text="View Farm Records", command=show_farm_records)
+records_button.pack(pady=10)
 
 #----- add a calculate button to the window
 calculate_button = tk.Button(window, text="Calculate", command=oncalculate)
