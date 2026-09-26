@@ -1,5 +1,6 @@
 import tkinter as tk
-from tkinter import font
+from tkinter import ttk, messagebox
+
 from calculations import (
     calculate_profit_margin,
     calculate_profit,
@@ -8,13 +9,54 @@ from calculations import (
     calculate_yield_per_acre,
     calculate_saleable_weight,
 )
-from main import show_farm_records
 
-window = tk.Tk()
-window.title("Cocoa Farmer Assistant")
-window.geometry("400x700")
+from database import get_farm_records, delete_farm_record, save_farm_record
+from quality_checks import check_moisture, get_quality_ratings
 
-def oncalculate():
+
+def start_dashboard():
+   
+
+    window = tk.Tk()
+    window.title("Cocoa Farmer Assistant")
+    window.geometry("900x700")
+
+    title_label = tk.Label(window, text="Cocoa Farm Dashboard", font=("Arial", 16, "bold"))
+    title_label.pack(pady=20)
+    subtitle_label = tk.Label(window, text="Enter your farm data below:", font=("Arial", 12))
+    subtitle_label.pack(pady=10)
+
+    input_frame = tk.LabelFrame(window, text="Farm Data", padding=20)
+    input_frame.pack(pady=20, padx=30, fill="x")
+
+    labels = [
+        "Harvest Weight (kg):",
+        "Rejected Weight (kg):",
+        "Price per kg (N):",
+        "Labour Cost (N):",
+        "Transport Cost (N):",
+        "Total Cost of Other Inputs (N):",
+        "Farm Size (acres):",
+        "Moisture Level (%):"
+    ]
+
+    entries = []
+    for row, label_text in enumerate(labels):
+        label = tk.Label(input_frame, text=label_text)
+        label.grid(row=row, column=0, sticky="w", pady=5)
+        entry = tk.Entry(input_frame)
+        entry.grid(row=row, column=1, pady=5)
+        entries.append(entry)
+    (harvest_weight_entry, rejected_weight_entry, price_entry, labour_entry, transport_entry, other_costs_entry, farm_size_entry, moisture_entry) = entries
+
+    result_frame = tk.LabelFrame(window, text="Results", padding=20)
+    result_frame.pack(pady=20, padx=30, fill="x")
+
+    result_label = tk.Label(result_frame, text="Enter farm data and click 'Calculate' to see results.", font=("Arial", 12, "bold"))
+    result_label.pack(pady=10)
+
+
+def calculate():
     try:
         harvest_weight = float(harvest_weight_entry.get())
         rejected_weight = float(rejected_weight_entry.get())
@@ -23,50 +65,36 @@ def oncalculate():
         transport = float(transport_entry.get())
         other_costs = float(other_costs_entry.get())
         farm_size = float(farm_size_entry.get())
+        moisture = float(moisture_entry.get())
 
 
         if harvest_weight <= 0:
-            warning_label.config(
-                text="Harvest weight must be greater than 0.",
-                fg="red"
+           raise ValueError("Harvest weight must be greater than 0." 
             )
-            return
+
         if rejected_weight < 0:
-            warning_label.config(
-                text="Rejected weight must be a non-negative value.",
-                fg="red"
-            )
-            return
+            raise ValueError("Rejected weight must be a non-negative value.")
+        
         if price <= 0:
-            warning_label.config(
-                text="Price must be greater than 0.",
-                fg="red"
+            raise ValueError("Price must be greater than 0."
             )
-            return
+        
         if labour < 0:
-            warning_label.config(
-                text="Labour cost must be a non-negative value.",
-                fg="red"
-            )
-            return
+            raise ValueError("Labour cost must be a non-negative value.")
+        
         if transport < 0:
-            warning_label.config(
-                text="Transport cost must be a non-negative value.",
-                fg="red"
-            )
-            return
+            raise ValueError("Transport cost must be a non-negative value.")
+        
         if other_costs < 0:
-            warning_label.config(
-                text="Other costs must be a non-negative value.",
-                fg="red"
+            raise ValueError("Other costs must be a non-negative value."
             )
-            return
+        
         if farm_size <= 0:
-            warning_label.config(
-                text="Farm size must be greater than 0.",
-                fg="red"
-            )
-            return
+            raise ValueError("Farm size must be greater than 0.")
+
+        if moisture < 0:
+            raise ValueError("Moisture level must be a non-negative value.")
+
 
 #----- perform calculations after validating inputs
 
@@ -77,114 +105,61 @@ def oncalculate():
         profit = calculate_profit(revenue, total_cost)
         profit_margin = calculate_profit_margin(profit, revenue)
 
-        #----- display the results in the entry fields and result label
-        yield_per_acre_entry.delete(0, tk.END)
-        yield_per_acre_entry.insert(0, f"{yield_per_acre:.2f}")
+        quality_check = check_moisture(moisture)
 
-        profit_margin_entry.delete(0, tk.END)
-        profit_margin_entry.insert(0, f"{profit_margin:.2f}")
+        result = (
+            f"Saleable Weight: {saleable_weight:.2f} kg\n"
+            f"Yield per Acre: {yield_per_acre:.2f} kg/acre\n"
+            f"Revenue: ${revenue:.2f}\n"
+            f"Total Cost: ${total_cost:.2f}\n"
+            f"Profit: ${profit:.2f}\n"
+            f"Profit Margin: {profit_margin:.2f}%\n"
+            f"Quality Check: {'Pass' if quality_check else 'Fail'}"
+        )
+        result_label.config(text=result, fg="blue")#
 
-        result_label.config(text=f"Saleable Weight: {saleable_weight:.2f} kg\nRevenue: ${revenue:.2f}\nTotal Cost: ${total_cost:.2f}\nProfit: ${profit:.2f}", fg="blue")
+        save_farm_record(harvest_weight, rejected_weight, price, labour, transport, other_costs, farm_size, moisture)
 
-        if moisture_entry.get():
-            moisture = float(moisture_entry.get())
-            if moisture > 8:
-                warning_label.config(text="Warning: Moisture level is above 8%!", fg="red")
-            else:
-                warning_label.config(text="Moisture level is acceptable.", fg="green")
+        messagebox.showinfo("Success", "Farm data saved successfully!")
+    except ValueError as error:
+        messagebox.showerror("Input Error", str(error))
 
-        if profit_margin < 0:
-            warning_label.config(text="Warning: Profit margin is negative!", fg="red")
-        else:
-            warning_label.config(text="Profit margin is positive.", fg="green")
+def view_records():
+    records = get_farm_records()
+    if not records:
+        messagebox.showinfo("No Records", "No farm records found.")
+        return
 
-        if harvest_weight > 0 and rejected_weight > (harvest_weight * 0.15):
-            warning_label.config(text="Warning: Rejected weight is more than 15% of harvest weight!", fg="red")
-        else:
-            warning_label.config(text="Rejected weight is within acceptable limits.", fg="green")
+    records_window = ttk.Toplevel(window)
+    records_window.title("Farm Records")
+    records_window.geometry("800x400")
 
-    except ValueError:
-        warning_label.config(text="Error: Please enter valid numeric values.", fg="red")    
+    tree = ttk.Treeview(records_window, columns=("ID", "Harvest Weight", "Rejected Weight", "Price per kg", "Labour Cost", "Transport Cost", "Other Costs", "Farm Size", "Moisture Level", "Created At"), show="headings")
+    tree.heading("ID", text="ID")
+    tree.heading("Harvest Weight", text="Harvest Weight (kg)")
+    tree.heading("Rejected Weight", text="Rejected Weight (kg)")
+    tree.heading("Price per kg", text="Price per kg (N)")
+    tree.heading("Labour Cost", text="Labour Cost (N)")
+    tree.heading("Transport Cost", text="Transport Cost (N)")
+    tree.heading("Other Costs", text="Other Costs (N)")
+    tree.heading("Farm Size", text="Farm Size (acres)")
+    tree.heading("Moisture Level", text="Moisture Level (%)")
+    tree.heading("Created At", text="Created At")
 
+    for record in records:
+        tree.insert("", ttk.END, values=record)
 
-#----- add a title label to the window
-title_label = tk.Label(window, text="Cocoa Farm Calculator", font=("Arial", 16, "bold"))
-title_label.pack(pady=20)
+    tree.pack(expand=True, fill=tk.BOTH)
 
-#----- add harvest weight label and entry field to the window
-harvest_weight_label = tk.Label(window, text="Harvest Weight (kg):")
-harvest_weight_label.pack()
-harvest_weight_entry = tk.Entry(window)
-harvest_weight_entry.pack(pady=10)
+    button_frame = ttk.Frame(records_window)
+    button_frame.pack(pady=10)
 
-#----- add a price per kg label and entry field to the window
-price_label = tk.Label(window, text="Price per kg ($):")
-price_label.pack()
-price_entry = tk.Entry(window)
-price_entry.pack(pady=10)
+    calculate_button = ttk.Button(button_frame, text="Calculate Totals")
+    calculate_button.grid(row=0, column=0, padx=10)
 
-#----- add a labour cost label and entry field to the window
-labour_label = tk.Label(window, text="Labour Cost ($):")
-labour_label.pack()
-labour_entry = tk.Entry(window)
-labour_entry.pack(pady=10)
+    records_button = ttk.Button(button_frame, text="View Record", command=lambda: view_selected_record(tree))
+    records_button.grid(row=0, column=1, padx=10)
 
-#----- add a transport cost label and entry field to the window
-transport_label = tk.Label(window, text="Transport Cost ($):")
-transport_label.pack()
-transport_entry = tk.Entry(window)
-transport_entry.pack(pady=10)
-
-#----- add a total cost of other inputs label and entry field to the window
-other_costs_label = tk.Label(window, text="Total Cost of Other Inputs ($):")
-other_costs_label.pack()
-other_costs_entry = tk.Entry(window)
-other_costs_entry.pack(pady=10)
-
-#----- add a farm size label and entry field to the window
-farm_size_label = tk.Label(window, text="Farm Size (acres):")   
-farm_size_label.pack()
-farm_size_entry = tk.Entry(window)
-farm_size_entry.pack(pady=10)
-
-#----- add a rejected weight label and entry field to the window
-rejected_weight_label = tk.Label(window, text="Rejected Weight (kg):")
-rejected_weight_label.pack()
-rejected_weight_entry = tk.Entry(window)
-rejected_weight_entry.pack(pady=10)
-
-#----- add a yield per acre label to the window
-yield_per_acre_label = tk.Label(window, text="Yield per Acre (kg/acre):")
-yield_per_acre_label.pack(pady=10)
-yield_per_acre_entry = tk.Entry(window)
-yield_per_acre_entry.pack(pady=10)
-
-#---- add a moisture label and entry field to the window
-moisture_label = tk.Label(window, text="Moisture Level (%):")
-moisture_label.pack()
-moisture_entry = tk.Entry(window)
-moisture_entry.pack(pady=10)
-
-#----- add a profit margin label to the window
-profit_margin_label = tk.Label(window, text="Profit Margin (%):")
-profit_margin_label.pack()
-profit_margin_entry = tk.Entry(window)
-profit_margin_entry.pack(pady=10)
-
-#----- add a result label to the window
-result_label = tk.Label(window, text="", font=("Arial", 12, "bold"))
-result_label.pack(pady=10)
-
-
-
-warning_label = tk.Label(window, text="", font=("Arial", 10, "bold"))  # Add some space before the button
-warning_label.pack(pady=15)
-
-records_button = tk.Button(window, text="View Farm Records", command=show_farm_records)
-records_button.pack(pady=10)
-
-#----- add a calculate button to the window
-calculate_button = tk.Button(window, text="Calculate", command=oncalculate)
-calculate_button.pack(pady=20)
+    exit_button = ttk.Button(button_frame, text="Exit", command=records_window.destroy)
 
 window.mainloop()

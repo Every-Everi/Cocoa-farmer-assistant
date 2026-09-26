@@ -20,6 +20,7 @@ def create_table():
             transport_cost REAL NOT NULL,
             other_costs REAL NOT NULL,
             farm_size REAL NOT NULL,
+            moisture_level REAL NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
@@ -27,14 +28,14 @@ def create_table():
     connection.commit()
     connection.close()
 
-def save_farm_record(harvest_weight, rejected_weight, price_per_kg, labour_cost, transport_cost, other_costs, farm_size):
+def save_farm_record(harvest_weight, rejected_weight, price_per_kg, labour_cost, transport_cost, other_costs, farm_size, moisture_level):
          """Save a new farm record to the database."""
          connection = get_connection()
          cursor = connection.cursor()
          cursor.execute('''
-           INSERT INTO farm_records (harvest_weight, rejected_weight, price_per_kg, labour_cost, transport_cost, other_costs, farm_size)
-           VALUES (?, ?, ?, ?, ?, ?, ?);
-           ''', (harvest_weight, rejected_weight, price_per_kg, labour_cost, transport_cost, other_costs, farm_size))
+           INSERT INTO farm_records (harvest_weight, rejected_weight, price_per_kg, labour_cost, transport_cost, other_costs, farm_size, moisture_level)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+           ''', (harvest_weight, rejected_weight, price_per_kg, labour_cost, transport_cost, other_costs, farm_size, moisture_level))
          connection.commit()
          connection.close()
 
@@ -42,7 +43,15 @@ def get_farm_records():
     """Retrieve all farm records from the database."""
     connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute('SELECT * FROM farm_records')
+    cursor.execute('SELECT * FROM farm_records ORDER BY id DESC;')
     records = cursor.fetchall()
     connection.close()
     return records
+
+def delete_farm_record(record_id):
+    """Delete a farm record from the database by its ID."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute('DELETE FROM farm_records WHERE id = ?;', (record_id,))
+    connection.commit()
+    connection.close()
